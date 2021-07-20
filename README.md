@@ -7,4 +7,6 @@
 
 ```
 source spock_env.sh
+./build.sh
+make
 ```

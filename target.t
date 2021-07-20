@@ -4,8 +4,8 @@ local amd_target = terralib.newtarget {
   FloatABIHard = true,
 }
 
-terra f(x : int)
-  return x + 1
+terra f(a : float, x : float, y : float)
+  return a * x + y
 end
 
 terralib.saveobj("test.o", {f=f}, {}, amd_target)
