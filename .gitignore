@@ -1,5 +1,5 @@
 *~
 *.o
-/saxpy
+/saxpy_*
 
 /legion
