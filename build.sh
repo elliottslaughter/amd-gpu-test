@@ -5,7 +5,7 @@ set -e
 source spock_env.sh
 
 if [[ ! -e legion ]]; then
-    git clone -b master https://github.com/StanfordLegion/legion.git
+    git clone -b master https://gitlab.com/StanfordLegion/legion.git
 fi
 
 cd legion/language
