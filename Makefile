@@ -9,6 +9,9 @@ all: saxpy_hip saxpy_terra
 
 test_terra.o: target.t
 	legion/language/regent.py target.t
+	llvm-as test_terra_host.ll
+	llvm-as test_terra_device.ll
+	clang-offload-bundler --inputs=test_terra_host.bc --inputs=test_terra_device.bc --type=o --outputs=test_terra.o --targets=host-x86_64-unknown-linux-gnu --targets=hip-amdgcn-amd-amdhsa-gfx908
 
 %.o:%.cc
 	$(HIPCC) -o $@ $(HIPCCFLAGS) -c $<
