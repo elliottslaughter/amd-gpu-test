@@ -24,4 +24,4 @@ saxpy_terra: test_terra.o saxpy.o
 
 .PHONY: clean
 clean:
-	rm -f *.o saxpy_hip saxpy_terra
+	rm -f *.o *.ll *.bc saxpy_hip saxpy_terra
