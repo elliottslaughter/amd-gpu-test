@@ -2,6 +2,6 @@
 *.bc
 *.ll
 *.o
-/saxpy_*
+saxpy_*
 
 /legion

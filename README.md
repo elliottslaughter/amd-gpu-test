@@ -9,7 +9,7 @@
 ```
 source spock_env.sh
 ./build.sh
-make
+make -C device_function
 ```
 
 # Notes
