@@ -1,7 +1,7 @@
 # Codes
 
-  * `device_function`: An implementation of SAXPY using a device function in HIP/Terra, called from a common device kernel
-  * `device_kernel`: An implementation of a SAXPY device kernel in HIP/Terra, called from a common host code
+  * `device_function`: A device function in HIP/Terra, called from a HIP device kernel/host code
+  * `device_kernel`: A device kernel in HIP/Terra, called from a HIP host code
 
 # Spock Quickstart
 
