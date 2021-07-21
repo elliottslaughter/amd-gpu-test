@@ -1,7 +1,7 @@
 #include <hip/hip_runtime.h>
 #include <stdio.h>
 
-__device__ extern float f(float a, float x, float y);
+__device__ extern "C" float f(float a, float x, float y);
 
 __global__ void saxpy(const size_t num_elements, const float alpha,
                       const float *x, const float *y, float *z) {
