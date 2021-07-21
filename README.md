@@ -1,16 +1,16 @@
-# Documentation Links
-
- * Target triples: https://llvm.org/docs/AMDGPUUsage.html#target-triples
- * Processors (look for `gfx908`): https://llvm.org/docs/AMDGPUUsage.html#processors
- * Clang offload bundler: https://clang.llvm.org/docs/ClangOffloadBundler.html
-
-# Testing on Spock
+# Spock Build
 
 ```
 source spock_env.sh
 ./build.sh
 make -C device_function
 ```
+
+# Documentation Links
+
+ * Target triples: https://llvm.org/docs/AMDGPUUsage.html#target-triples
+ * Processors (look for `gfx908`): https://llvm.org/docs/AMDGPUUsage.html#processors
+ * Clang offload bundler: https://clang.llvm.org/docs/ClangOffloadBundler.html
 
 # Notes
 
