@@ -30,8 +30,15 @@ local hipLaunchKernel = terralib.externfunction("hipLaunchKernel", {&opaque, int
 
 local hipPopCallConfiguration = terralib.externfunction("__hipPopCallConfiguration", {&dim3, &dim3, &int64, &&stream} -> {int32})
 
+local hipSuccess = 0
+local hipGetErrorName = terralib.externfunction("hipGetErrorName", {int32} -> {rawstring})
+
+local saxpyExtern = terralib.externfunction("saxpy", {uint64, float, &float, &float, &float} -> {})
+
+local c = terralib.includec("stdio.h")
+
 terra stub(num_elements : uint64, alpha : float,
-           x : &float, y : &float, z : &float)
+           x : &float, y : &float, z : &float) : {}
   var grid_dim : dim3
   var block_dim : dim3
   var shmem_size : int64
@@ -51,7 +58,12 @@ terra stub(num_elements : uint64, alpha : float,
   args[3] = [&opaque](&y)
   args[4] = [&opaque](&z)
 
-  hipLaunchKernel([&opaque](saxpy), grid_dim12, grid_dim3, block_dim12, block_dim3, args, shmem_size, stream)
+  c.printf("about to call hipLaunchKernel\n")
+
+  var result = hipLaunchKernel([&opaque](stub), grid_dim12, grid_dim3, block_dim12, block_dim3, args, shmem_size, stream)
+  if result ~= hipSuccess then
+    c.printf("error: %s\n", hipGetErrorName(result))
+  end
 end
 
 terralib.saveobj("test_terra_host.o", {__device_stub__saxpy=stub})
