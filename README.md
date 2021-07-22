@@ -34,11 +34,18 @@ hip-amdgcn-amd-amdhsa-gfx908
 host-x86_64-unknown-linux-gnu
 ```
 
-You can use it to unpack the bundle too. Note that the component files
-are LLVM bitcode.
+You can use it to unpack the bundle too. Note that the device file is
+LLVM bitcode, while the host file is object code. You can compile with
+the `-emit-llvm` flag in order to have both be LLVM bitcode.
 
 ```
 clang-offload-bundler --unbundle --inputs=test_hip.o --type=o --outputs=test_hip.unbundle_device.bc --targets=hip-amdgcn-amd-amdhsa-gfx908
 clang-offload-bundler --unbundle --inputs=test_hip.o --type=o --outputs=test_hip.unbundle_host.o --targets=host-x86_64-unknown-linux-gnu
+```
+
+If you do use bitcode, the `llvm-dis` command is useful to conver this
+back into textual LLVM IR.
+
+```
 llvm-dis test_hip.unbundle_device.bc
 ```

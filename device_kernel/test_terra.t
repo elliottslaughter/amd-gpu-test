@@ -28,7 +28,7 @@ local stream = opaque
 
 local hipLaunchKernel = terralib.externfunction("hipLaunchKernel", {&opaque, int64, int32, int64, int32, &&opaque, int64, &stream} -> {int32})
 
-local hipPopCallConfiguration = terralib.externfunction("__hipPopCallConfiguration", {&dim3, &dim3, &int64, &&stream} -> {int32})
+local __hipPopCallConfiguration = terralib.externfunction("__hipPopCallConfiguration", {&dim3, &dim3, &int64, &&stream} -> {int32})
 
 local hipSuccess = 0
 local hipGetErrorName = terralib.externfunction("hipGetErrorName", {int32} -> {rawstring})
@@ -43,7 +43,7 @@ terra stub(num_elements : uint64, alpha : float,
   var block_dim : dim3
   var shmem_size : int64
   var stream : &stream
-  hipPopCallConfiguration(&grid_dim, &block_dim, &shmem_size, &stream)
+  __hipPopCallConfiguration(&grid_dim, &block_dim, &shmem_size, &stream)
 
   -- It looks like want to pack the first two dims into an int64
   var grid_dim12 = @[&int64](&grid_dim)
@@ -66,5 +66,24 @@ terra stub(num_elements : uint64, alpha : float,
   end
 end
 
-terralib.saveobj("test_terra_host.o", {__device_stub__saxpy=stub})
+local __hipRegisterFatBinary = terralib.externfunction("__hipRegisterFatBinary", {&int8} -> {&&int8})
+local __hipRegisterFunction = terralib.externfunction("__hipRegisterFunction", {&&int8, &int8, &int8, &int8, int32, &int8, &int8, &int8, &int8, &int32} -> {int32})
+
+local __hip_fatbin = terralib.global(int8, nil, "__hip_fatbin", true)
+struct fatbin_wrapper {
+       a : int32,
+       b : int32,
+       c : &int8,
+       d : &int8,
+}
+local __hip_fatbin_wrapper = terralib.global(fatbin_wrapper, `fatbin_wrapper{1212764230,1,&__hip_fatbin,nil})
+
+terra ctor()
+  c.printf("in ctor\n")
+  var gpubin = __hipRegisterFatBinary([&int8](&__hip_fatbin_wrapper))
+  __hipRegisterFunction(gpubin, [&int8](stub), "saxpy", "saxpy", -1, nil, nil, nil, nil, nil)
+  -- FIXME: install dtor
+end
+
+terralib.saveobj("test_terra_host.o", {__device_stub__saxpy=stub, hip_module_ctor=ctor})
 terralib.saveobj("test_terra_device.ll", {saxpy=saxpy}, {}, amd_target)

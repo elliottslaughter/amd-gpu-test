@@ -5,7 +5,18 @@ __global__ extern "C" void saxpy(
                       const size_t num_elements, const float alpha,
                       const float *x, const float *y, float *z);
 
+#ifdef TERRA_HACK
+extern "C" void hip_module_ctor();
+#endif
+
 int main() {
+#ifdef TERRA_HACK
+  printf("running Terra hack\n");
+  hip_module_ctor();
+  printf("finished Terra hack\n");
+  fflush(stdout);
+#endif
+
   size_t num_elements = 1 << 20;
   size_t buffer_size = num_elements * sizeof(float);
 
