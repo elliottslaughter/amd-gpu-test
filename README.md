@@ -3,14 +3,14 @@
   * `device_function`: A device function in HIP/Terra, called from a HIP device kernel/host code
   * `device_kernel`: A device kernel in HIP/Terra, called from a HIP host code
 
-# Spock Quickstart
+# Crusher Quickstart
 
 ```
-source spock_env.sh
+source crusher_env.sh
 ./build.sh
 make -C device_function
 make -C device_kernel
-salloc -N 1 -A $PROJECT_ID -t 01:00:00 -p ecp
+salloc -N 1 -A $PROJECT_ID -t 01:00:00 -p batch
 srun device_function/saxpy_hip
 srun device_function/saxpy_terra
 srun device_kernel/saxpy_hip
