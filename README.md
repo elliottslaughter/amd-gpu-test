@@ -20,7 +20,7 @@ srun device_kernel/saxpy_terra
 # Documentation Links
 
  * Target triples: https://llvm.org/docs/AMDGPUUsage.html#target-triples
- * Processors (look for `gfx908`): https://llvm.org/docs/AMDGPUUsage.html#processors
+ * Processors (look for `gfx90a`): https://llvm.org/docs/AMDGPUUsage.html#processors
  * Clang offload bundler: https://clang.llvm.org/docs/ClangOffloadBundler.html
 
 # Notes
@@ -30,7 +30,7 @@ The HIP `.o` file seems to have been produced by a tool called
 
 ```
 $ clang-offload-bundler --list --inputs=test_hip.o --type=o
-hip-amdgcn-amd-amdhsa-gfx908
+hip-amdgcn-amd-amdhsa-gfx90a
 host-x86_64-unknown-linux-gnu
 ```
 
@@ -39,7 +39,7 @@ LLVM bitcode, while the host file is object code. You can compile with
 the `-emit-llvm` flag in order to have both be LLVM bitcode.
 
 ```
-clang-offload-bundler --unbundle --inputs=test_hip.o --type=o --outputs=test_hip.unbundle_device.bc --targets=hip-amdgcn-amd-amdhsa-gfx908
+clang-offload-bundler --unbundle --inputs=test_hip.o --type=o --outputs=test_hip.unbundle_device.bc --targets=hip-amdgcn-amd-amdhsa-gfx90a
 clang-offload-bundler --unbundle --inputs=test_hip.o --type=o --outputs=test_hip.unbundle_host.o --targets=host-x86_64-unknown-linux-gnu
 ```
 
