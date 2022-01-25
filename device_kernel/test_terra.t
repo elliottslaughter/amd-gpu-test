@@ -1,6 +1,6 @@
 local amd_target = terralib.newtarget {
   Triple = 'amdgcn-amd-amdhsa',
-  CPU = 'gfx908',
+  CPU = 'gfx90a',
   FloatABIHard = true,
 }
 
