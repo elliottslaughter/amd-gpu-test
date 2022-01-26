@@ -23,6 +23,7 @@ srun device_kernel/saxpy_terra
  * Processors (look for `gfx90a`): https://llvm.org/docs/AMDGPUUsage.html#processors
  * Clang offload bundler: https://clang.llvm.org/docs/ClangOffloadBundler.html
  * `__hipRegisterFunction`: https://rocmdocs.amd.com/en/latest/Programming_Guides/hipporting-driver-api.html#initialization-and-termination-functions
+ * For comparison, NVIDIA's fatbin format (note the magic number): https://github.com/StanfordLegion/legion/blob/c10271d6ecb7ca1c92cfabf5d76e4a76444f9300/language/src/regent/cudahelper.t#L46
 
 # Notes
 
