@@ -22,6 +22,7 @@ srun device_kernel/saxpy_terra
  * Target triples: https://llvm.org/docs/AMDGPUUsage.html#target-triples
  * Processors (look for `gfx90a`): https://llvm.org/docs/AMDGPUUsage.html#processors
  * Clang offload bundler: https://clang.llvm.org/docs/ClangOffloadBundler.html
+ * `__hipRegisterFunction`: https://rocmdocs.amd.com/en/latest/Programming_Guides/hipporting-driver-api.html#initialization-and-termination-functions
 
 # Notes
 
