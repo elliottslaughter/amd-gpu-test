@@ -19,6 +19,12 @@ terra saxpy(num_elements : uint64, alpha : float,
   end
 end
 
+terralib.saveobj("test_terra_device.ll", {saxpy=saxpy}, {}, amd_target)
+os.execute("llvm-as test_terra_device.ll")
+local f = assert(io.open("test_terra_device.bc", "rb"))
+local device_bc = f:read("*all")
+f:close()
+
 struct dim3 {
   x : int32,
   y : int32,
@@ -69,21 +75,24 @@ end
 local __hipRegisterFatBinary = terralib.externfunction("__hipRegisterFatBinary", {&int8} -> {&&int8})
 local __hipRegisterFunction = terralib.externfunction("__hipRegisterFunction", {&&int8, &int8, &int8, &int8, int32, &int8, &int8, &int8, &int8, &int32} -> {int32})
 
-local __hip_fatbin = terralib.global(int8, nil, "__hip_fatbin", true)
+-- local __hip_fatbin = terralib.global(int8, nil, "__hip_fatbin", true)
 struct fatbin_wrapper {
        a : int32,
        b : int32,
        c : &int8,
        d : &int8,
 }
-local __hip_fatbin_wrapper = terralib.global(fatbin_wrapper, `fatbin_wrapper{1212764230,1,&__hip_fatbin,nil})
+local __hip_fatbin_wrapper = terralib.global(fatbin_wrapper, `fatbin_wrapper{1212764230,1,device_bc --[[&__hip_fatbin]],nil})
 
 terra ctor()
   c.printf("in ctor\n")
+  c.printf("calling __hipRegisterFatBinary\n")
   var gpubin = __hipRegisterFatBinary([&int8](&__hip_fatbin_wrapper))
-  __hipRegisterFunction(gpubin, [&int8](stub), "saxpy", "saxpy", -1, nil, nil, nil, nil, nil)
+  c.printf("finished __hipRegisterFatBinary\n")
+  c.printf("calling __hipRegisterFunction\n")
+  var result = __hipRegisterFunction(gpubin, [&int8](stub), "saxpy", "saxpy", -1, nil, nil, nil, nil, nil)
+  c.printf("finished __hipRegisterFunction with result %d\n", result)
   -- FIXME: install dtor
 end
 
 terralib.saveobj("test_terra_host.o", {__device_stub__saxpy=stub, hip_module_ctor=ctor})
-terralib.saveobj("test_terra_device.ll", {saxpy=saxpy}, {}, amd_target)
