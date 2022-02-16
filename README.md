@@ -25,6 +25,8 @@ srun device_kernel/saxpy_terra
  * `__hipRegisterFunction`: https://rocmdocs.amd.com/en/latest/Programming_Guides/hipporting-driver-api.html#initialization-and-termination-functions
     * implementation: https://github.com/ROCm-Developer-Tools/hipamd/blob/c681345d78600325ac7db92156ee7829ac50b695/src/hip_platform.cpp#L87
  * For comparison, NVIDIA's fatbin format (note the magic number): https://github.com/StanfordLegion/legion/blob/c10271d6ecb7ca1c92cfabf5d76e4a76444f9300/language/src/regent/cudahelper.t#L46
+ * module API example code: https://github.com/ROCm-Developer-Tools/HIP/blob/09583b01835af26bc94d917364ac100e03424adc/samples/0_Intro/module_api/launchKernelHcc.cpp
+    * note the use of `--genco` to generate this output file: https://github.com/ROCm-Developer-Tools/HIP/blob/09583b01835af26bc94d917364ac100e03424adc/samples/0_Intro/module_api/Makefile#L41
 
 # Notes
 
@@ -52,3 +54,28 @@ back into textual LLVM IR.
 ```
 llvm-dis test_hip.unbundle_device.bc
 ```
+
+# Tracing `__hipRegisterFunction`
+
+  * `__hipRegisterFunction`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L76
+      * calls `PlatformState::addFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L84
+  * (for comparison, `hipModuleLoadData`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_module.cpp#L63)
+      * calls `PlatformState::loadModule` https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_module.cpp#L67
+  * `PlatformState::addFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L889
+      * calls `statCO_.addFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L890
+      * this seems to go through `hip::StatCO`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.hpp#L94
+      * defined here: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.hpp#L125
+  * `StatCO::addFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L705
+      * calls `digestFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L709
+      * defined here: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L691
+      * calls `programs->ExtractFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L700
+      * `FatBinaryInfo` is defined here: https://github.com/ROCm-Developer-Tools/hipamd/blob/de01ce04677243116dba52b59406a130517ea4c7/src/hip_fatbin.hpp#L36
+  * `FatBinaryInfo::ExtractFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/c681345d78600325ac7db92156ee7829ac50b695/src/hip_fatbin.cpp#L49
+    * calls `CodeObject::ExtractCodeObjectFromFile`: https://github.com/ROCm-Developer-Tools/hipamd/blob/c681345d78600325ac7db92156ee7829ac50b695/src/hip_fatbin.cpp#L71
+    * also calls `CodeObject::ExtractCodeObjectFromMemory`: https://github.com/ROCm-Developer-Tools/hipamd/blob/c681345d78600325ac7db92156ee7829ac50b695/src/hip_fatbin.cpp#L76
+    * `CodeObject` defined here: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.hpp#L43
+  * `CodeObject::ExtractCodeObjectFromFile`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L378
+      * calls `extractCodeObjectFromFatBinary`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L396
+      * defined here: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_code_object.cpp#L416
+      * **THIS SEEMS TO BE THE PLACE WHERE THEY PARSE THE CLANG OFFLOAD BUNDLER API**
+  * (`PlatformState::loadModule`: https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L743)
