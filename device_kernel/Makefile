@@ -1,5 +1,6 @@
 HIPCC ?= hipcc
 LLVM_AS ?= llvm-as
+LLVM_DIS ?= llvm-dis
 CLANG_OFFLOAD_BUNDLER ?= clang-offload-bundler
 
 HIPCCFLAGS ?=
