@@ -9,4 +9,6 @@ if [[ ! -e hip_dev ]]; then
 fi
 
 cd hip_dev/samples/0_Intro/module_api
+export HIPCC_FLAGS="$HIPCCFLAGS"
+export GENCO_FLAGS="$HIPCCFLAGS"
 make
