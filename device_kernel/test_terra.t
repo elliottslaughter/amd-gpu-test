@@ -20,6 +20,8 @@ terra saxpy(num_elements : uint64, alpha : float,
 end
 
 terralib.saveobj("test_terra_device.ll", {saxpy=saxpy}, {}, amd_target)
+print("Please modify the file test_terra_device.ll as desired and then press ENTER to continue.")
+io.read()
 os.execute("llvm-as test_terra_device.ll")
 local f = assert(io.open("test_terra_device.bc", "rb"))
 local device_bc = f:read("*all")

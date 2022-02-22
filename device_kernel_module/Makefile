@@ -32,7 +32,7 @@ saxpy_terra: test_terra_host.o saxpy_terra.o
 
 .PHONY: debug
 debug: test_hip.bc
-	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.unbundle_device.bc --targets=hip-amdgcn-amd-amdhsa-gfx90a
+	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.unbundle_device.bc --targets=hip-amdgcn-amd-amdhsa-$(TERRA_AMDGPU_TARGET)
 	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.unbundle_host.bc --targets=host-x86_64-unknown-linux-gnu
 	$(LLVM_DIS) test_hip.unbundle_device.bc
 	$(LLVM_DIS) test_hip.unbundle_host.bc

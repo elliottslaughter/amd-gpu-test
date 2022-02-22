@@ -13,28 +13,36 @@ terra f(a : float, x : float, y : float)
   return a * x + y
 end
 
+-- FIXME: need to get this through llvm.amdgcn.dispatch.ptr (I think) instead of hard-coding
+local workgroup_size = 256
+
 terra saxpy(num_elements : uint64, alpha : float,
             x : &float, y : &float, z : &float)
-  var idx = wgx() + wix()
+  var idx = wgx() * workgroup_size + wix()
   if idx < num_elements then
     z[idx] = z[idx] + alpha * x[idx] + y[idx]
   end
 end
-
--- Save the kernel as an object file.
-terralib.saveobj("test_terra_device.o", {saxpy=saxpy}, {}, amd_target)
+-- FIXME: need to set calling convention amdgpu_kernel by hand on this function
 
 local function pr(...)
   print(...)
   return ...
 end
 
+-- Save the kernel as an object file.
+terralib.saveobj("test_terra_device.ll", {saxpy=saxpy}, {}, amd_target)
+print("Please modify the file test_terra_device.ll as desired and then press ENTER to continue.")
+io.read()
+os.execute(pr("llvm-as test_terra_device.ll"))
+os.execute(pr("llc -mtriple=amdgcn-amd-amdhsa -mcpu=" .. arch .. " -filetype=obj -O3 test_terra_device.bc -o test_terra_device.o"))
+
 -- Link the kernel into a shared library.
 os.execute(pr("ld.lld -shared -plugin-opt=mcpu=" .. arch .. " -plugin-opt=-amdgpu-internalize-symbols -plugin-opt=O3 -plugin-opt=-amdgpu-early-inline-all=true -plugin-opt=-amdgpu-function-calls=false -o test_terra_device.so test_terra_device.o"))
 
 -- Bundle the shared library.
 -- Note the use of /dev/null for the host portion.
-os.execute(pr("clang-offload-bundler --inputs=/dev/null,test_terra_device.so --type=o --outputs=test_terra.o --targets=host-x86_64-unknown-linux-gnu,hipv4-amdgcn-amd-amdhsa-" .. arch))
+os.execute(pr("clang-offload-bundler --inputs=/dev/null,test_terra_device.so --type=o --outputs=test_terra.o --targets=host-x86_64-unknown-linux-gnu,hipv4-amdgcn-amd-amdhsa--" .. arch))
 
 -- Now read the whole thing so we can embed it in the host code.
 local f = assert(io.open("test_terra.o", "rb"))
@@ -62,6 +70,12 @@ end
 
 terra stub(num_elements : uint64, alpha : float,
            x : &float, y : &float, z : &float) : {}
+  var grid_dim : c.dim3
+  var block_dim : c.dim3
+  var shmem_size : uint64
+  var stream : c.hipStream_t
+  check(c.__hipPopCallConfiguration(&grid_dim, &block_dim, &shmem_size, &stream))
+
   var args : (&opaque)[5]
   args[0] = &num_elements
   args[1] = &alpha
@@ -69,17 +83,17 @@ terra stub(num_elements : uint64, alpha : float,
   args[3] = &y
   args[4] = &z
 
-  var stream : c.hipStream_t
-  c.printf("about to call hipStreamCreate\n")
-  check(c.hipStreamCreate(&stream))
+  c.printf("grid_dim.x %d, grid_dim.y %d, grid_dim.z %d\n", grid_dim.x, grid_dim.y, grid_dim.z);
+  c.printf("block_dim.x %d, block_dim.y %d, block_dim.z %d\n", block_dim.x, block_dim.y, block_dim.z);
+
   c.printf("about to call hipModuleLaunchKernel\n")
   check(c.hipModuleLaunchKernel(
           func,
-          (num_elements+255)/256, 1, 1, -- global work size
-                             256, 1, 1, -- block size
-          0, -- shared memory bytes
+          grid_dim.x, grid_dim.y, grid_dim.z,
+          block_dim.x, block_dim.y, block_dim.z,
+          shmem_size,
           stream,
-          &(args[0]),
+          args,
           nil))
 end
 

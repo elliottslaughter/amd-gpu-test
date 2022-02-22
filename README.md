@@ -1,7 +1,16 @@
 # Codes
 
   * `device_function`: A device function in HIP/Terra, called from a HIP device kernel/host code
-  * `device_kernel`: A device kernel in HIP/Terra, called from a HIP host code
+  * `device_kernel`: A device kernel in HIP/Terra, via `__hipRegisterFatBinary`, called from a HIP host code
+  * `device_kernel_module`: A device kernel in HIP/Terra, via `hipModuleLoadData`, called from a HIP host code
+
+# Status
+
+  * `device_function`: Working
+  * `device_kernel`: Broken
+  * `device_kernel_module`: Works with the following workarounds:
+      * Need to manually set `amdgpu_kernel` calling convention on kernel.
+      * Need to manually configure work group size.
 
 # Crusher Quickstart
 
@@ -22,7 +31,7 @@ srun device_kernel/saxpy_terra
  * Target triples: https://llvm.org/docs/AMDGPUUsage.html#target-triples
  * Processors (look for `gfx90a`): https://llvm.org/docs/AMDGPUUsage.html#processors
  * Clang offload bundler: https://clang.llvm.org/docs/ClangOffloadBundler.html
- * [`__hipRegisterFunction` docs](https://rocmdocs.amd.com/en/latest/Programming_Guides/hipporting-driver-api.html#initialization-and-termination-functions)
+ * [`__hipRegisterFatBinary` docs](https://rocmdocs.amd.com/en/latest/Programming_Guides/hipporting-driver-api.html#initialization-and-termination-functions)
     * [implementation](https://github.com/ROCm-Developer-Tools/hipamd/blob/c681345d78600325ac7db92156ee7829ac50b695/src/hip_platform.cpp#L87)
  * For comparison, [NVIDIA's fatbin format (note the magic number)](https://github.com/StanfordLegion/legion/blob/c10271d6ecb7ca1c92cfabf5d76e4a76444f9300/language/src/regent/cudahelper.t#L46)
  * [module API example code](https://github.com/ROCm-Developer-Tools/HIP/blob/09583b01835af26bc94d917364ac100e03424adc/samples/0_Intro/module_api/launchKernelHcc.cpp)
@@ -56,9 +65,9 @@ back into textual LLVM IR.
 llvm-dis test_hip.unbundle_device.bc
 ```
 
-# Tracing `__hipRegisterFunction`
+# Tracing `__hipRegisterFatBinary`
 
-  * [`__hipRegisterFunction`](https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L76)
+  * [`__hipRegisterFatBinary`](https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L76)
       * calls [`PlatformState::addFatBinary`](https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_platform.cpp#L84)
   * (for comparison, [`hipModuleLoadData`](https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_module.cpp#L63))
       * calls [`PlatformState::loadModule`](https://github.com/ROCm-Developer-Tools/hipamd/blob/6d1262c56061cf63a44cde77c9205912e67c278d/src/hip_module.cpp#L67)
