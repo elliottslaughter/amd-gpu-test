@@ -2,6 +2,8 @@
 *.bc
 *.ll
 *.o
+*.so
+core
 saxpy_*
 
 /legion
