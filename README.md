@@ -27,6 +27,7 @@ srun device_kernel/saxpy_terra
  * For comparison, [NVIDIA's fatbin format (note the magic number)](https://github.com/StanfordLegion/legion/blob/c10271d6ecb7ca1c92cfabf5d76e4a76444f9300/language/src/regent/cudahelper.t#L46)
  * [module API example code](https://github.com/ROCm-Developer-Tools/HIP/blob/09583b01835af26bc94d917364ac100e03424adc/samples/0_Intro/module_api/launchKernelHcc.cpp)
     * note the use of [`--genco` to generate this output file](https://github.com/ROCm-Developer-Tools/HIP/blob/09583b01835af26bc94d917364ac100e03424adc/samples/0_Intro/module_api/Makefile#L41)
+ * [Logging levels](https://github.com/ROCm-Developer-Tools/HIP/blob/develop/docs/markdown/hip_logging.md#hip-logging-level)
 
 # Notes
 
