@@ -1,4 +1,5 @@
 HIPCC ?= hipcc
+LLC ?= llc
 LLVM_AS ?= llvm-as
 LLVM_DIS ?= llvm-dis
 CLANG_OFFLOAD_BUNDLER ?= clang-offload-bundler
@@ -13,7 +14,7 @@ all: saxpy_hip saxpy_terra
 test_terra.o: test_terra.t
 	../legion/language/regent.py test_terra.t
 	$(LLVM_AS) test_terra_device.ll
-	$(CLANG_OFFLOAD_BUNDLER) --inputs=test_terra_host.o,test_terra_device.bc --type=o --outputs=test_terra.o --targets=host-x86_64-unknown-linux-gnu,hip-amdgcn-amd-amdhsa-gfx90a
+	$(CLANG_OFFLOAD_BUNDLER) --inputs=test_terra_host.o,test_terra_device.bc --type=o --outputs=test_terra.o --targets=host-x86_64-unknown-linux-gnu,hip-amdgcn-amd-amdhsa-$(TERRA_AMDGPU_TARGET)
 
 %.o:%.cc
 	$(HIPCC) -o $@ $(HIPCCFLAGS) -c $<
@@ -31,6 +32,13 @@ saxpy_hip: test_hip.o saxpy_hip.o
 
 saxpy_terra: test_terra.o saxpy_terra.o
 	$(HIPCC) -o $@ $(HIPCCFLAGS) $^ $(LDFLAGS)
+
+saxpy_hip_repack: test_hip.bc saxpy_hip.o
+	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.repack_device.bc --targets=hip-amdgcn-amd-amdhsa-$(TERRA_AMDGPU_TARGET)
+	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.repack_host.bc --targets=host-x86_64-unknown-linux-gnu
+	$(LLC) -filetype=obj -O3 test_hip.repack_host.bc -o test_hip.repack_host.o
+	$(CLANG_OFFLOAD_BUNDLER) --inputs=test_hip.repack_host.o,test_hip.repack_device.bc --type=o --outputs=test_hip_repack.o --targets=host-x86_64-unknown-linux-gnu,hip-amdgcn-amd-amdhsa-$(TERRA_AMDGPU_TARGET)
+	$(HIPCC) -o $@ $(HIPCCFLAGS) test_hip_repack.o saxpy_hip.o $(LDFLAGS)
 
 .PHONY: debug
 debug: test_hip.bc
