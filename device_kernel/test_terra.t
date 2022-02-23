@@ -53,6 +53,8 @@ terra check(ok : c.hipError_t)
   end
 end
 
+local saxpy = terralib.global({uint64, float, &float, &float, &float} -> {}, nil, "saxpy")
+
 terra stub(num_elements : uint64, alpha : float,
            x : &float, y : &float, z : &float) : {}
   var grid_dim : c.dim3
@@ -73,14 +75,11 @@ terra stub(num_elements : uint64, alpha : float,
 
   c.printf("about to call hipLaunchKernel\n")
 
-  check(c.hipLaunchKernel([&opaque](stub), grid_dim, block_dim, args, shmem_size, stream))
+  check(c.hipLaunchKernel([&opaque](&saxpy), grid_dim, block_dim, args, shmem_size, stream))
 end
 
--- local saxpyExtern = terralib.externfunction("saxpy", {uint64, float, &float, &float, &float} -> {})
--- local saxpy = terralib.global({uint64, float, &float, &float, &float} -> {}, `(&stub), "saxpy", false --[[extern]], true --[[constant]])
-
 local __hipRegisterFatBinary = terralib.externfunction("__hipRegisterFatBinary", {&int8} -> {&&int8})
-local __hipRegisterFunction = terralib.externfunction("__hipRegisterFunction", {&&int8, &int8, &int8, &int8, int32, &int8, &int8, &int8, &int8, &int32} -> {int32})
+local __hipRegisterFunction = terralib.externfunction("__hipRegisterFunction", {&&int8, &&int8, &int8, &int8, int32, &int8, &int8, &int8, &int8, &int32} -> {int32})
 
 -- local __hip_fatbin = terralib.global(int8, nil, "__hip_fatbin", true)
 struct fatbin_wrapper {
@@ -93,11 +92,12 @@ local __hip_fatbin_wrapper = terralib.global(fatbin_wrapper, `fatbin_wrapper{121
 
 terra ctor()
   c.printf("in ctor\n")
+  saxpy = stub
   c.printf("calling __hipRegisterFatBinary\n")
   var gpubin = __hipRegisterFatBinary([&int8](&__hip_fatbin_wrapper))
   c.printf("finished __hipRegisterFatBinary\n")
   c.printf("calling __hipRegisterFunction\n")
-  var result = __hipRegisterFunction(gpubin, [&int8](stub), "saxpy", "saxpy", -1, nil, nil, nil, nil, nil)
+  var result = __hipRegisterFunction(gpubin, [&&int8](&saxpy), "saxpy", "saxpy", -1, nil, nil, nil, nil, nil)
   c.printf("finished __hipRegisterFunction with result %d\n", result)
   -- FIXME: install dtor
 end

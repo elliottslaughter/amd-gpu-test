@@ -7,8 +7,10 @@
 # Status
 
   * `device_function`: Working
-  * `device_kernel`: Broken
-      * Note: you can use `HIP_ENABLE_DEFERRED_LOADING=0` to disable lazy loading to force the error early.
+  * `device_kernel`: Works with the following workarounds:
+      * Need to manually modify the host code fatbin to reference device code via `external constant i8, section ".hip_fatbin"`.
+      * Need to manually set `amdgpu_kernel` calling convention on kernel.
+      * Need to manually configure work group size.
   * `device_kernel_module`: Works with the following workarounds:
       * Need to manually set `amdgpu_kernel` calling convention on kernel.
       * Need to manually configure work group size.
