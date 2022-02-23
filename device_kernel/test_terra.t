@@ -53,7 +53,10 @@ terra check(ok : c.hipError_t)
   end
 end
 
-local saxpy = terralib.global({uint64, float, &float, &float, &float} -> {}, nil, "saxpy")
+-- The name and value of this variable don't actually matter. I'm
+-- pretty sure this is just being used as a safe way to generate a
+-- unique ID that can identify the kernel.
+local saxpy = terralib.global({uint64, float, &float, &float, &float} -> {}, nil, "saxpy_handle")
 
 terra stub(num_elements : uint64, alpha : float,
            x : &float, y : &float, z : &float) : {}
@@ -92,7 +95,6 @@ local __hip_fatbin_wrapper = terralib.global(fatbin_wrapper, `fatbin_wrapper{121
 
 terra ctor()
   c.printf("in ctor\n")
-  saxpy = stub
   c.printf("calling __hipRegisterFatBinary\n")
   var gpubin = __hipRegisterFatBinary([&int8](&__hip_fatbin_wrapper))
   c.printf("finished __hipRegisterFatBinary\n")

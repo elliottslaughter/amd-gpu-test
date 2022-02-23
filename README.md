@@ -8,7 +8,15 @@
 
   * `device_function`: Working
   * `device_kernel`: Works with the following workarounds:
-      * Need to manually modify the host code fatbin to reference device code via `external constant i8, section ".hip_fatbin"`.
+      * Need to manually modify the host code fatbin to reference device code via:
+
+        ```
+        @__hip_fatbin = external constant i8, section ".hip_fatbin"
+        @__hip_fatbin_wrapper = internal constant { i32, i32, i8*, i8* } { i32 1212764230, i32 1, i8* @__hip_fatbin, i8* null }, section ".hipFatBinSegment", align 8
+        ```
+
+        (And pass this to `__hipRegisterFatBinary`.)
+
       * Need to manually set `amdgpu_kernel` calling convention on kernel.
       * Need to manually configure work group size.
   * `device_kernel_module`: Works with the following workarounds:
