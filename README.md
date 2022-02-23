@@ -12,10 +12,9 @@
 
         ```
         @__hip_fatbin = external constant i8, section ".hip_fatbin"
-        @__hip_fatbin_wrapper = internal constant { i32, i32, i8*, i8* } { i32 1212764230, i32 1, i8* @__hip_fatbin, i8* null }, section ".hipFatBinSegment", align 8
         ```
 
-        (And pass this to `__hipRegisterFatBinary`.)
+        (And then modify the fatbin wrapper to use this instead of embedding a string.)
 
       * Need to manually set `amdgpu_kernel` calling convention on kernel.
       * Work group size is currently hard-coded.
