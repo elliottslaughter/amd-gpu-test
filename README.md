@@ -18,10 +18,10 @@
         (And pass this to `__hipRegisterFatBinary`.)
 
       * Need to manually set `amdgpu_kernel` calling convention on kernel.
-      * Need to manually configure work group size.
+      * Work group size is currently hard-coded.
   * `device_kernel_module`: Works with the following workarounds:
       * Need to manually set `amdgpu_kernel` calling convention on kernel.
-      * Need to manually configure work group size.
+      * Work group size is currently hard-coded.
 
 # Crusher Quickstart
 
