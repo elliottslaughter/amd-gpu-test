@@ -1,5 +1,5 @@
 module load PrgEnv-gnu
-module load rocm
+module load rocm/5.0.2
 
 export TERRA_AMDGPU_TARGET=gfx90a
 export HIPCCFLAGS=--amdgpu-target=gfx90a
