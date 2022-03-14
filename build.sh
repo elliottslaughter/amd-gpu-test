@@ -2,7 +2,15 @@
 
 set -e
 
-source crusher_env.sh
+target="$(hostname --fqdn)"
+if [[ $target = *.crusher.* ]]; then
+    source crusher_env.sh
+elif [[ $target = *.spock.* ]]; then
+    source spock_env.sh
+else
+    echo "Don't know how to build on this machine."
+    exit 1
+fi
 
 if [[ ! -e legion ]]; then
     git clone -b master https://gitlab.com/StanfordLegion/legion.git
