@@ -9,10 +9,6 @@ local amd_target = terralib.newtarget {
 local wgx = terralib.intrinsic("llvm.amdgcn.workgroup.id.x",{} -> int32)
 local wix = terralib.intrinsic("llvm.amdgcn.workitem.id.x",{} -> int32)
 
-terra f(a : float, x : float, y : float)
-  return a * x + y
-end
-
 -- FIXME: need to get this through llvm.amdgcn.dispatch.ptr (I think) instead of hard-coding
 local workgroup_size = 256
 
@@ -23,7 +19,7 @@ terra saxpy(num_elements : uint64, alpha : float,
     z[idx] = z[idx] + alpha * x[idx] + y[idx]
   end
 end
--- FIXME: need to set calling convention amdgpu_kernel by hand on this function
+saxpy:setcallingconv("amdgpu_kernel")
 
 local function pr(...)
   print(...)
@@ -31,10 +27,7 @@ local function pr(...)
 end
 
 -- Save the kernel as an object file.
-terralib.saveobj("test_terra_device.ll", {saxpy=saxpy}, {}, amd_target)
-os.execute(pr("sed -i -e 's/dso_local void/dso_local amdgpu_kernel void/g' test_terra_device.ll"))
-os.execute(pr("llvm-as test_terra_device.ll"))
-os.execute(pr("llc -mtriple=amdgcn-amd-amdhsa -mcpu=" .. arch .. " -filetype=obj -O3 test_terra_device.bc -o test_terra_device.o"))
+terralib.saveobj("test_terra_device.o", {saxpy=saxpy}, {}, amd_target)
 
 -- Link the kernel into a shared library.
 os.execute(pr("ld.lld -shared -plugin-opt=mcpu=" .. arch .. " -plugin-opt=-amdgpu-internalize-symbols -plugin-opt=O3 -plugin-opt=-amdgpu-early-inline-all=true -plugin-opt=-amdgpu-function-calls=false -o test_terra_device.so test_terra_device.o"))
