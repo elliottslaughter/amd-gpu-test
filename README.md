@@ -16,10 +16,8 @@
 
         (And then modify the fatbin wrapper to use this instead of embedding a string.)
 
-      * Need to manually set `amdgpu_kernel` calling convention on kernel.
       * Work group size is currently hard-coded.
   * `device_kernel_module`: Works with the following workarounds:
-      * Need to manually set `amdgpu_kernel` calling convention on kernel.
       * Work group size is currently hard-coded.
 
 # Crusher Quickstart
