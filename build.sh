@@ -16,6 +16,11 @@ if [[ ! -e legion ]]; then
     git clone -b master https://gitlab.com/StanfordLegion/legion.git
 fi
 
+if [[ ! -e Thrust ]]; then
+    git clone https://github.com/ROCmSoftwarePlatform/Thrust.git
+fi
+export THRUST_PATH=$PWD/Thrust
+
 cd legion/language
-CC=cc CXX=CC HOST_CC=gcc HOST_CXX=g++ USE_GASNET=0 ./scripts/setup_env.py --llvm-version=130 --terra-url https://github.com/terralang/terra.git --terra-branch master
+CC=cc CXX=CC HOST_CC=gcc HOST_CXX=g++ USE_GASNET=0 USE_HIP=1 HIP_ARCH=$TERRA_AMDGPU_TARGET ./scripts/setup_env.py --llvm-version=130 --terra-url https://github.com/terralang/terra.git --terra-branch master
 
