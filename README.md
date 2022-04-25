@@ -16,13 +16,8 @@
         ```
 
         (And then modify the fatbin wrapper to use this instead of embedding a string.)
-
-      * Work group size is currently hard-coded.
-  * `device_kernel_module`: Works with the following workarounds:
-      * Work group size is currently hard-coded.
-  * `local_memory`: Works with the following workarounds:
-      * Work group size is currently hard-coded.
-      * Grid size is currently hard-coded.
+  * `device_kernel_module`: Working
+  * `local_memory`: Working
 
 # Crusher Quickstart
 

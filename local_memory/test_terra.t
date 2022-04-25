@@ -6,6 +6,21 @@ local amd_target = terralib.newtarget {
   FloatABIHard = true,
 }
 
+local as_local = 3
+local as_constant = 4
+function cptr(typ) return terralib.types.pointer(typ, as_constant) end
+local dispatch_ptr = terralib.intrinsic("llvm.amdgcn.dispatch.ptr", {}->cptr(int8))
+
+terra work_group_size_x(dp : cptr(int8))
+  return ([terralib.types.pointer(int16, as_constant)](dp))[2]
+end
+work_group_size_x:setinlined(true)
+
+terra grid_size_x(dp : cptr(int8))
+  return ([terralib.types.pointer(int32, as_constant)](dp))[3]
+end
+grid_size_x:setinlined(true)
+
 local wgx = terralib.intrinsic("llvm.amdgcn.workgroup.id.x",{} -> int32)
 local wix = terralib.intrinsic("llvm.amdgcn.workitem.id.x",{} -> int32)
 
@@ -14,16 +29,7 @@ local NUM_BUCKETS = histogram_h.NUM_BUCKETS
 
 local floor = terralib.intrinsic("llvm.floor.f32", {float}->float)
 
--- Need this to generate
--- @_ZZ17compute_histogramE15local_histogram = internal unnamed_addr addrspace(3) global [128 x i32] undef, align 16
---
--- currently generates
--- @local_histogram = addrspace(3) global [128 x i32] undef
-local as_local = 3
-local local_histogram = terralib.global(uint32[NUM_BUCKETS], nil, "local_histogram", nil, nil, as_local) -- FIXME: missing internal/unnamed/align
-
-local as_constant = 4
-local dispatch_ptr = terralib.intrinsic("llvm.amdgcn.dispatch.ptr", {}->terralib.types.pointer(int8, as_constant))
+local local_histogram = terralib.global(uint32[NUM_BUCKETS], nil, "local_histogram", nil, nil, as_local)
 
 local barrier = terralib.intrinsic("llvm.amdgcn.s.barrier", {}->{})
 
@@ -42,8 +48,8 @@ terra histogram(num_elements : uint64, range : float,
   -- Note: this fails:
   -- var dp4 = dp+4
 
-  var wgsx = ([terralib.types.pointer(int16, as_constant)](dp))[2]
-  var gsx = ([terralib.types.pointer(int32, as_constant)](dp))[3]
+  var wgsx = work_group_size_x(dp)
+  var gsx = grid_size_x(dp)
 
   var t = wix()
   var nt = wgsx

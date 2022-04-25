@@ -6,15 +6,29 @@ local amd_target = terralib.newtarget {
   FloatABIHard = true,
 }
 
+local as_local = 3
+local as_constant = 4
+function cptr(typ) return terralib.types.pointer(typ, as_constant) end
+local dispatch_ptr = terralib.intrinsic("llvm.amdgcn.dispatch.ptr", {}->cptr(int8))
+
+terra work_group_size_x(dp : cptr(int8))
+  return ([terralib.types.pointer(int16, as_constant)](dp))[2]
+end
+work_group_size_x:setinlined(true)
+
+terra grid_size_x(dp : cptr(int8))
+  return ([terralib.types.pointer(int32, as_constant)](dp))[3]
+end
+grid_size_x:setinlined(true)
+
 local wgx = terralib.intrinsic("llvm.amdgcn.workgroup.id.x",{} -> int32)
 local wix = terralib.intrinsic("llvm.amdgcn.workitem.id.x",{} -> int32)
 
--- FIXME: need to get this through llvm.amdgcn.dispatch.ptr (I think) instead of hard-coding
-local workgroup_size = 256
-
 terra saxpy(num_elements : uint64, alpha : float,
             x : &float, y : &float, z : &float)
-  var idx = wgx() * workgroup_size + wix()
+  var dp = dispatch_ptr()
+  var wgsx = work_group_size_x(dp)
+  var idx = wgx() * wgsx + wix()
   if idx < num_elements then
     z[idx] = z[idx] + alpha * x[idx] + y[idx]
   end
