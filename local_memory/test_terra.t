@@ -9,11 +9,6 @@ local amd_target = terralib.newtarget {
 local wgx = terralib.intrinsic("llvm.amdgcn.workgroup.id.x",{} -> int32)
 local wix = terralib.intrinsic("llvm.amdgcn.workitem.id.x",{} -> int32)
 
--- FIXME: need to get this through llvm.amdgcn.dispatch.ptr (I think) instead of hard-coding
-local workgroup_size = 256
-
-local grid_size = 256 -- FIXME: don't think we can hard-code this
-
 local histogram_h = terralib.includec("histogram.h", {"-I."})
 local NUM_BUCKETS = histogram_h.NUM_BUCKETS
 
@@ -24,7 +19,11 @@ local floor = terralib.intrinsic("llvm.floor.f32", {float}->float)
 --
 -- currently generates
 -- @local_histogram = addrspace(3) global [128 x i32] undef
-local local_histogram = terralib.global(uint32[NUM_BUCKETS], nil, "local_histogram", nil, nil, 3) -- FIXME: missing internal/unnamed/align
+local as_local = 3
+local local_histogram = terralib.global(uint32[NUM_BUCKETS], nil, "local_histogram", nil, nil, as_local) -- FIXME: missing internal/unnamed/align
+
+local as_constant = 4
+local dispatch_ptr = terralib.intrinsic("llvm.amdgcn.dispatch.ptr", {}->terralib.types.pointer(int8, as_constant))
 
 local barrier = terralib.intrinsic("llvm.amdgcn.s.barrier", {}->{})
 
@@ -38,8 +37,16 @@ syncthreads:setinlined(true)
 
 terra histogram(num_elements : uint64, range : float,
                 data : &float, histogram : &uint32)
+  var dp = dispatch_ptr()
+
+  -- Note: this fails:
+  -- var dp4 = dp+4
+
+  var wgsx = ([terralib.types.pointer(int16, as_constant)](dp))[2]
+  var gsx = ([terralib.types.pointer(int32, as_constant)](dp))[3]
+
   var t = wix()
-  var nt = workgroup_size
+  var nt = wgsx
 
   for i = t, NUM_BUCKETS, nt do
     local_histogram[i] = 0
@@ -47,7 +54,7 @@ terra histogram(num_elements : uint64, range : float,
 
   syncthreads()
 
-  for idx = (wgx() * workgroup_size) + wix(), num_elements, grid_size * workgroup_size do
+  for idx = (wgx() * wgsx) + wix(), num_elements, gsx do
     var bucket = uint64(floor(data[idx] / range * (NUM_BUCKETS - 1)))
     terralib.atomicrmw("add", &local_histogram[bucket], 1, {ordering = "monotonic"})
   end
@@ -113,9 +120,6 @@ terra stub(num_elements : uint64, range : float,
   args[1] = &range
   args[2] = &data
   args[3] = &histogram
-
-  -- FIXME: not sure how we're supposed to get the shared memory size; it's coming in zero from popCall...
-  shmem_size = [terralib.sizeof(local_histogram.type)]
 
   c.printf("grid_dim.x %d, grid_dim.y %d, grid_dim.z %d\n", grid_dim.x, grid_dim.y, grid_dim.z);
   c.printf("block_dim.x %d, block_dim.y %d, block_dim.z %d\n", block_dim.x, block_dim.y, block_dim.z);

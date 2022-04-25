@@ -18,7 +18,7 @@ int main() {
   fflush(stdout);
 #endif
 
-  size_t num_elements = 1 << 20;
+  size_t num_elements = 1 << 21;
   size_t data_size = num_elements * sizeof(float);
   size_t histogram_size = NUM_BUCKETS * sizeof(unsigned);
 
