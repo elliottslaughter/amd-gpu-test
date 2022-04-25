@@ -5,6 +5,7 @@
 *.so
 core
 saxpy_*
+histogram_*
 
 /legion
 /hip_dev

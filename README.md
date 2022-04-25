@@ -3,6 +3,7 @@
   * `device_function`: A device function in HIP/Terra, called from a HIP device kernel/host code
   * `device_kernel`: A device kernel in HIP/Terra, via `__hipRegisterFatBinary`, called from a HIP host code
   * `device_kernel_module`: A device kernel in HIP/Terra, via `hipModuleLoadData`, called from a HIP host code
+  * `local_memory`: A demonstration of local memory, atomics, and barriers, via a simple histogram code
 
 # Status
 
@@ -19,6 +20,9 @@
       * Work group size is currently hard-coded.
   * `device_kernel_module`: Works with the following workarounds:
       * Work group size is currently hard-coded.
+  * `local_memory`: Works with the following workarounds:
+      * Work group size is currently hard-coded.
+      * Grid size is currently hard-coded.
 
 # Crusher Quickstart
 
@@ -26,12 +30,12 @@
 source crusher_env.sh
 ./build.sh
 make -C device_function
-make -C device_kernel
+make -C device_kernel_module
 salloc -N 1 -A $PROJECT_ID -t 01:00:00 -p batch
 srun device_function/saxpy_hip
 srun device_function/saxpy_terra
-srun device_kernel/saxpy_hip
-srun device_kernel/saxpy_terra
+srun device_kernel_module/saxpy_hip
+srun device_kernel_module/saxpy_terra
 ```
 
 # Documentation Links
