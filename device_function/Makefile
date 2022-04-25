@@ -1,5 +1,6 @@
 HIPCC ?= hipcc
 LLVM_AS ?= llvm-as
+LLVM_DIS ?= llvm-dis
 CLANG_OFFLOAD_BUNDLER ?= clang-offload-bundler
 
 HIPCCFLAGS ?=
@@ -17,11 +18,22 @@ test_terra.o: test_terra.t
 %.o:%.cc
 	$(HIPCC) -o $@ $(HIPCCFLAGS) -c $<
 
+%.bc:%.cc
+	$(HIPCC) -o $@ $(HIPCCFLAGS) -c -emit-llvm $<
+
 saxpy_hip: test_hip.o saxpy.o
 	$(HIPCC) -o $@ $(HIPCCFLAGS) $^ $(LDFLAGS)
 
 saxpy_terra: test_terra.o saxpy.o
 	$(HIPCC) -o $@ $(HIPCCFLAGS) $^ $(LDFLAGS)
+
+
+.PHONY: debug
+debug: test_hip.bc
+	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.unbundle_device.bc --targets=hip-amdgcn-amd-amdhsa-$(TERRA_AMDGPU_TARGET)
+	$(CLANG_OFFLOAD_BUNDLER) --unbundle --inputs=test_hip.bc --type=o --outputs=test_hip.unbundle_host.bc --targets=host-x86_64-unknown-linux-gnu
+	$(LLVM_DIS) test_hip.unbundle_device.bc
+	$(LLVM_DIS) test_hip.unbundle_host.bc
 
 .PHONY: clean
 clean:
