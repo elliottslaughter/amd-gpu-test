@@ -2,6 +2,9 @@
 
 #include "histogram.h"
 
+__global__ extern "C" void compute_histogram(const size_t num_elements, const float range,
+                                             const float *data, unsigned *histogram);
+
 __global__ void compute_histogram(const size_t num_elements, const float range,
                                   const float *data, unsigned *histogram) {
   int t = threadIdx.x;

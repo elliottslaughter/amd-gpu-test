@@ -12,23 +12,39 @@ local wix = terralib.intrinsic("llvm.amdgcn.workitem.id.x",{} -> int32)
 -- FIXME: need to get this through llvm.amdgcn.dispatch.ptr (I think) instead of hard-coding
 local workgroup_size = 256
 
-terra saxpy(num_elements : uint64, alpha : float,
-            x : &float, y : &float, z : &float)
-  var idx = wgx() * workgroup_size + wix()
-  if idx < num_elements then
-    var i0 = idx % 32
-    var i1 = idx / 32
-    var i3 = i2p { i2 { i0, i1, 0 } }
-    var i4 = add_i2p(i3, i3)
-    var i5 = sub_i2p(i4, i3)
-    var i6 = i5.i.x + i5.i.y*32
-    if idx ~= i6 then
-      idx = 0 -- something that will definitely break
-    end
-    z[idx] = z[idx] + alpha * x[idx] + y[idx]
+local grid_size = 4 -- FIXME: don't think we can hard-code this
+
+local histogram_h = terralib.includec("histogram.h", {"-I."})
+local NUM_BUCKETS = histogram_h.NUM_BUCKETS
+
+local floor = terralib.intrinsic("llvm.floor.f32", {float}->float)
+
+terra histogram(num_elements : uint64, range : float,
+                data : &float, histogram : &uint32)
+  var t = wix()
+  var nt = workgroup_size
+
+  -- FIXME: how do we do this with shared memory?
+  var local_histogram : uint32[NUM_BUCKETS]
+
+  for i = t, NUM_BUCKETS, nt do
+    local_histogram[i] = 0
+  end
+
+  -- FIXME: how to __syncthreads?
+
+  for idx = (wgx() * workgroup_size) + wix(), num_elements, grid_size * workgroup_size do
+    var bucket = floor(data[idx] / range * (NUM_BUCKETS - 1));
+    terralib.atomicrmw("add", &local_histogram[idx], 1, {ordering = "monotonic"})
+  end
+
+  -- FIXME: how to __syncthreads?
+
+  for i = t, NUM_BUCKETS, nt do
+    terralib.atomicrmw("add", &histogram[i], local_histogram[i], {ordering = "monotonic"})
   end
 end
-saxpy:setcallingconv("amdgpu_kernel")
+histogram:setcallingconv("amdgpu_kernel")
 
 local function pr(...)
   print(...)
@@ -36,8 +52,8 @@ local function pr(...)
 end
 
 -- Save the kernel as an object file.
-print(terralib.saveobj(nil, "llvmir", {saxpy=saxpy}, {}, amd_target, false))
-terralib.saveobj("test_terra_device.o", {saxpy=saxpy}, {}, amd_target)
+print(terralib.saveobj(nil, "llvmir", {histogram=histogram}, {}, amd_target, false))
+terralib.saveobj("test_terra_device.o", {histogram=histogram}, {}, amd_target)
 
 -- Link the kernel into a shared library.
 os.execute(pr("ld.lld -shared -plugin-opt=mcpu=" .. arch .. " -plugin-opt=-amdgpu-internalize-symbols -plugin-opt=O3 -plugin-opt=-amdgpu-early-inline-all=true -plugin-opt=-amdgpu-function-calls=false -o test_terra_device.so test_terra_device.o"))
@@ -107,9 +123,9 @@ terra ctor()
   c.printf("finished hipModuleLoadData\n")
   c.printf("calling hipModuleGetFunction\n")
   -- var func : c.hipFunction_t
-  check(c.hipModuleGetFunction(&func, module, "saxpy"))
+  check(c.hipModuleGetFunction(&func, module, "histogram"))
   c.printf("finished hipModuleGetFunction\n")
   -- FIXME: install dtor
 end
 
-terralib.saveobj("test_terra_host.o", {__device_stub__saxpy=stub, hip_module_ctor=ctor})
+terralib.saveobj("test_terra_host.o", {__device_stub__compute_histogram=stub, hip_module_ctor=ctor})
